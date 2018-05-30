@@ -1,21 +1,19 @@
 {
-    "name": "zls/logger",
-    "description": "",
-    "type": "library",
-    "license": "MIT",
-  	"minimum-stability": "dev",
-    "authors": [
-        {
-            "name": "影浅",
-            "email": "seekwe@gmail.com"
-        }
-    ],
-    "autoload":
+  "name": "zls/logger",
+  "description": "",
+  "type": "library",
+  "license": "MIT",
+  "minimum-stability": "dev",
+  "authors": [
     {
-        "psr-4":
-        {
-            "Zls\\Logger\\": "src/"
-        }
-    },
-    "require": {}
+      "name": "影浅",
+      "email": "seekwe@gmail.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Zls\\Logger\\": "src/"
+    }
+  },
+  "require": {}
 }
