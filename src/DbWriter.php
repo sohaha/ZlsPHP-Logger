@@ -2,7 +2,7 @@
 
 namespace Zls\Logger;
 
-/**
+/*
  * 错误日志记录类
  * 把错误日志记录到数据库
  * 表结构如下：
@@ -25,8 +25,9 @@ use Z;
 
 class DbWriter implements \Zls_Logger
 {
-
-    private $table, $db, $log404;
+    private $table;
+    private $db;
+    private $log404;
 
     public function __construct($table = 'system_error_logger', $log404 = false, $dbGroup = null)
     {
@@ -49,15 +50,14 @@ class DbWriter implements \Zls_Logger
         $row['code'] = $exception->getErrorCode();
         $row['type'] = $exception->getErrorType();
         $row['request_data'] = json_encode([
-            'get'      => Z::get(),
-            'post'     => Z::post(),
-            'server'   => Z::server(),
-            'cookie'   => Z::cookie(),
-            'session'  => Z::session(),
+            'get' => Z::get(),
+            'post' => Z::post(),
+            'server' => Z::server(),
+            'cookie' => Z::cookie(),
+            'session' => Z::session(),
             'post_raw' => Z::postRaw(),
         ]);
         $row['create_time'] = time();
         $this->db->insert($this->table, $row)->execute();
     }
-
 }
