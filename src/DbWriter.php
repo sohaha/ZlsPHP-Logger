@@ -21,6 +21,7 @@ namespace Zls\Logger;
  * PRIMARY KEY (  `error_logger_id` )
  * ) ENGINE = INNODB CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci COMMENT =  '系统错误日志表'
  */
+
 use Z;
 
 class DbWriter implements \Zls_Logger
@@ -31,8 +32,8 @@ class DbWriter implements \Zls_Logger
 
     public function __construct($table = 'system_error_logger', $log404 = false, $dbGroup = null)
     {
-        $this->db = empty($dbGroup) ? Z::db() : Z::db($dbGroup);
-        $this->table = empty($table) ? 'system_error_logger' : $table;
+        $this->db     = empty($dbGroup) ? Z::db() : Z::db($dbGroup);
+        $this->table  = empty($table) ? 'system_error_logger' : $table;
         $this->log404 = $log404;
     }
 
@@ -41,23 +42,27 @@ class DbWriter implements \Zls_Logger
         if (($exception instanceof \Zls_Exception_404) && !$this->log404) {
             return;
         }
-        $row['domain'] = Z::server('http_host', '');
-        $row['client_ip'] = Z::clientIp();
-        $row['server_ip'] = Z::serverIp();
-        $row['message'] = $exception->getErrorMessage();
-        $row['file'] = $exception->getErrorFile();
-        $row['line'] = $exception->getErrorLine();
-        $row['code'] = $exception->getErrorCode();
-        $row['type'] = $exception->getErrorType();
+        $row['url']          = Z::server('http_host', '');
+        $row['client_ip']    = Z::clientIp();
+        $row['server_ip']    = Z::serverIp();
+        $row['message']      = $exception->getErrorMessage();
+        $row['file']         = $exception->getErrorFile();
+        $row['line']         = $exception->getErrorLine();
+        $row['code']         = $exception->getErrorCode();
+        $row['type']         = $exception->getErrorType();
         $row['request_data'] = json_encode([
-            'get' => Z::get(),
-            'post' => Z::post(),
-            'server' => Z::server(),
-            'cookie' => Z::cookie(),
-            'session' => Z::session(),
+            'get'      => Z::get(),
+            'post'     => Z::post(),
+            'server'   => Z::server(),
+            'cookie'   => Z::cookie(),
+            'session'  => Z::session(),
             'post_raw' => Z::postRaw(),
         ]);
-        $row['create_time'] = time();
-        $this->db->insert($this->table, $row)->execute();
+        $row['create_time']  = time();
+        try {
+            $this->db->insert($this->table, $row)->execute();
+        } catch (\Exception $e) {
+            Z::log($e->getMessage(), 'LoggerDbWriter');
+        }
     }
 }
