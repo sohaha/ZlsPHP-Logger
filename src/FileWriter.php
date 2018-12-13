@@ -33,7 +33,7 @@ class FileWriter implements \Zls_Logger
             return;
         }
         if ($this->saveFile) {
-            $logsDirPath = $this->logsDirPath . date(Z::config()->getLogsSubDirNameFormat()) . '/';
+            $logsDirPath = Z::realPathMkdir($this->logsDirPath . date(Z::config()->getLogsSubDirNameFormat()), true, false, false);
             $showData    = $this->showDate();
             $debug       = z::debug('', false, true, false);
             $content     = str_repeat('=', 25) . (new \DateTime())->format('Y-m-d H:i:s u')
@@ -54,9 +54,7 @@ class FileWriter implements \Zls_Logger
                 . ($showData ? 'CookieData : ' . json_encode(Z::cookie()) . PHP_EOL : '')
                 . (!Z::isCli() ? 'ServerData : ' . json_encode(Z::server()) . PHP_EOL : '')
                 . 'Trace : ' . $exception->getTraceAsString() . PHP_EOL . PHP_EOL;
-            if (!is_dir($logsDirPath)) {
-                mkdir($logsDirPath, 0700, true);
-            }
+            $logsFilePath = $logsDirPath . 'logs.php';
             if (!file_exists($logsFilePath = $logsDirPath . 'logs.php')) {
                 $content = '<?php defined("IN_ZLS") or die();?>' . "\n" . $content;
             }
