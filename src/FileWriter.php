@@ -7,11 +7,8 @@ namespace Zls\Logger;
  * @author        影浅
  * @email         seekwe@gmail.com
  * @copyright     Copyright (c) 2015 - 2017, 影浅, Inc.
- * @link          ---
- * @since         v0.0.1
- * @updatetime    2017-01-03 11:09
+ * @updatetime    2019-2-20 14:40:20
  */
-
 use Z;
 
 class FileWriter implements \Zls_Logger
@@ -22,9 +19,9 @@ class FileWriter implements \Zls_Logger
 
     public function __construct($logsDirPath, $log404 = true, $saveFile = true)
     {
-        $this->log404      = $log404;
-        $this->saveFile    = $saveFile;
-        $this->logsDirPath = Z::realPath($logsDirPath) . '/';
+        $this->log404 = $log404;
+        $this->saveFile = $saveFile;
+        $this->logsDirPath = Z::realPath($logsDirPath).'/';
     }
 
     public function write(\Zls_Exception $exception)
@@ -33,32 +30,29 @@ class FileWriter implements \Zls_Logger
             return;
         }
         if ($this->saveFile) {
-            $logsDirPath = Z::realPathMkdir($this->logsDirPath . date(Z::config()->getLogsSubDirNameFormat()), true, false, false);
-            $showData    = $this->showDate();
-            $debug       = z::debug('', false, true, false);
-            $content     = str_repeat('=', 25) . (new \DateTime())->format('Y-m-d H:i:s u')
-                . str_repeat('=', 25) . PHP_EOL
-                . (Z::server('http_host', '') ? 'Url : ' . Z::host(true, true, true) . "\n" : '')
-                . 'Type : ' . $exception->getErrorType() . PHP_EOL
-                . 'Environment : ' . $exception->getEnvironment() . PHP_EOL
-                . 'Message : ' . $exception->getErrorMessage() . PHP_EOL
-                . 'File : ' . $exception->getFile() . PHP_EOL
-                . 'Line : ' . $exception->getErrorLine() . PHP_EOL
-                . 'WasteTime : ' . $debug['runtime'] . PHP_EOL
-                . 'Memory : ' . $debug['memory'] . PHP_EOL
-                . 'ClientIp : ' . Z::clientIp() . PHP_EOL
-                . 'ServerIp : ' . Z::serverIp() . PHP_EOL
-                . 'Hostname : ' . Z::hostname() . PHP_EOL
-                . ($showData ? 'PostData : ' . json_encode(Z::post()) . PHP_EOL : '')
-                . ($showData ? 'PostRawData : ' . json_encode(Z::postRaw()) . PHP_EOL : '')
-                . ($showData ? 'CookieData : ' . json_encode(Z::cookie()) . PHP_EOL : '')
-                . (!Z::isCli() ? 'ServerData : ' . json_encode(Z::server()) . PHP_EOL : '')
-                . 'Trace : ' . $exception->getTraceAsString() . PHP_EOL . PHP_EOL;
-            $logsFilePath = $logsDirPath . 'logs.php';
-            if (!file_exists($logsFilePath = $logsDirPath . 'logs.php')) {
-                $content = '<?php defined("IN_ZLS") or die();?>' . "\n" . $content;
+            $logsDirPath = $this->logsDirPath.date(Z::config()->getLogsSubDirNameFormat()).'/';
+            $content = 'URL : '.Z::host(true, true, true)."\n"
+                .'ClientIP : '.Z::clientIp()."\n"
+                .'ServerIP : '.Z::serverIp()."\n"
+                .'ServerHostname : '.Z::hostname()."\n"
+                .(!$this->showDate() ? 'Request Uri : '.Z::server('request_uri')."\n" : '')
+                .(!$this->showDate() ? 'Get Data : '.json_encode(Z::get())."\n" : '')
+                .(!$this->showDate() ? 'Post Data : '.json_encode(Z::post())."\n" : '')
+                .(!$this->showDate() ? 'Cookie Data : '.json_encode(Z::cookie())."\n" : '')
+                .(!Z::isCli() ? 'Server Data : '.json_encode(Z::server())."\n" : '')
+                .$exception->renderCli()."\n";
+            if (!is_dir($logsDirPath)) {
+                $oldmask = umask(0);
+                mkdir($logsDirPath, 0777, true);
+                umask($oldmask);
+            }
+            if (!file_exists($logsFilePath = $logsDirPath.'logs.php')) {
+                $content = '<?php defined("IN_ZLS") or die();?>'."\n".$content;
             }
             file_put_contents($logsFilePath, $content, LOCK_EX | FILE_APPEND);
+        }
+        if (z::isAjax()) {
+            z::finish($exception->renderJson());
         }
     }
 
