@@ -9,6 +9,7 @@ namespace Zls\Logger;
  * @copyright     Copyright (c) 2015 - 2017, 影浅, Inc.
  * @updatetime    2019-2-20 14:40:20
  */
+
 use Z;
 
 class FileWriter implements \Zls_Logger
@@ -21,7 +22,7 @@ class FileWriter implements \Zls_Logger
     {
         $this->log404 = $log404;
         $this->saveFile = $saveFile;
-        $this->logsDirPath = Z::realPath($logsDirPath).'/';
+        $this->logsDirPath = Z::realPath($logsDirPath) . '/';
     }
 
     public function write(\Zls_Exception $exception)
@@ -30,26 +31,29 @@ class FileWriter implements \Zls_Logger
             return;
         }
         if ($this->saveFile) {
-            $logsDirPath = $this->logsDirPath.date(Z::config()->getLogsSubDirNameFormat()).'/';
-            $content = 'URL : '.Z::host(true, true, true)."\n"
-                .'ClientIP : '.Z::clientIp()."\n"
-                .'ServerIP : '.Z::serverIp()."\n"
-                .'ServerHostname : '.Z::hostname()."\n"
-                .(!$this->showDate() ? 'Request Uri : '.Z::server('request_uri')."\n" : '')
-                .(!$this->showDate() ? 'Get Data : '.json_encode(Z::get())."\n" : '')
-                .(!$this->showDate() ? 'Post Data : '.json_encode(Z::post())."\n" : '')
-                .(!$this->showDate() ? 'Cookie Data : '.json_encode(Z::cookie())."\n" : '')
-                .(!Z::isCli() ? 'Server Data : '.json_encode(Z::server())."\n" : '')
-                .$exception->renderCli()."\n";
+            $logsDirPath = $this->logsDirPath . date(Z::config()->getLogsSubDirNameFormat()) . '/';
+            $content = 'URL : ' . Z::host(true, true, true) . "\n"
+                . 'ClientIP : ' . Z::clientIp() . "\n"
+                . 'ServerIP : ' . Z::serverIp() . "\n"
+                . 'ServerHostname : ' . Z::hostname() . "\n"
+                . (!$this->showDate() ? 'Request Uri : ' . Z::server('request_uri') . "\n" : '')
+                . (!$this->showDate() ? 'Get Data : ' . json_encode(Z::get()) . "\n" : '')
+                . (!$this->showDate() ? 'Post Data : ' . json_encode(Z::post()) . "\n" : '')
+                . (!$this->showDate() ? 'Cookie Data : ' . json_encode(Z::cookie()) . "\n" : '')
+                . (!Z::isCli() ? 'Server Data : ' . json_encode(Z::server()) . "\n" : '')
+                . $exception->renderCli() . "\n";
             if (!is_dir($logsDirPath)) {
-                $oldmask = umask(0);
-                mkdir($logsDirPath, 0777, true);
-                umask($oldmask);
+                Z::forceUmask(function () use ($logsDirPath) {
+                    mkdir($logsDirPath, 0777, true);
+                });
             }
-            if (!file_exists($logsFilePath = $logsDirPath.'logs.php')) {
-                $content = '<?php defined("IN_ZLS") or die();?>'."\n".$content;
+            if (!file_exists($logsFilePath = $logsDirPath . 'logs.php')) {
+                $content = '<?php defined("IN_ZLS") or die();?>' . "\n" . $content;
             }
-            file_put_contents($logsFilePath, $content, LOCK_EX | FILE_APPEND);
+            Z::forceUmask(function () use ($logsFilePath, $content) {
+                file_put_contents($logsFilePath, $content, LOCK_EX | FILE_APPEND);
+            },777);
+
         }
         if (z::isAjax()) {
             z::finish($exception->renderJson());
