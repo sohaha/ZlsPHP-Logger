@@ -2,26 +2,26 @@
 
 namespace Zls\Logger;
 
+use Z;
+
 /*
  * Zls_Logger_File
  * @author        影浅
  * @email         seekwe@gmail.com
- * @copyright     Copyright (c) 2015 - 2017, 影浅, Inc.
- * @updatetime    2019-2-20 14:40:20
+ * @updatetime    2019-3-1 15:17:01
  */
-
-use Z;
-
 class FileWriter implements \Zls_Logger
 {
     private $logsDirPath;
     private $log404;
     private $saveFile;
+    private $logsSubNameFormat;
 
-    public function __construct($logsDirPath, $log404 = true, $saveFile = true)
+    public function __construct($logsDirPath, $log404 = true, $saveFile = true, $logsSubNameFormat = 'Y-m-d/H')
     {
         $this->log404 = $log404;
         $this->saveFile = $saveFile;
+        $this->logsSubNameFormat = $logsSubNameFormat;
         $this->logsDirPath = Z::realPath($logsDirPath) . '/';
     }
 
@@ -31,7 +31,16 @@ class FileWriter implements \Zls_Logger
             return;
         }
         if ($this->saveFile) {
-            $logsDirPath = $this->logsDirPath . date(Z::config()->getLogsSubDirNameFormat()) . '/';
+            $now = time();
+            $dir = explode('/', $this->logsSubNameFormat);
+            if (count($dir) > 1) {
+                $file = date(array_pop($dir), $now);
+                $dir = date(join('/', $dir), $now);
+            } else {
+                $dir = '';
+                $file = date($this->logsSubNameFormat, $now);
+            }
+            $logsDirPath = $this->logsDirPath . $dir . '/';
             $content = 'URL : ' . Z::host(true, true, true) . "\n"
                 . 'ClientIP : ' . Z::clientIp() . "\n"
                 . 'ServerIP : ' . Z::serverIp() . "\n"
@@ -47,12 +56,12 @@ class FileWriter implements \Zls_Logger
                     mkdir($logsDirPath, 0777, true);
                 });
             }
-            if (!file_exists($logsFilePath = $logsDirPath . 'logs.php')) {
-                $content = '<?php defined("IN_ZLS") or die();?>' . "\n" . $content;
+            if (!file_exists($logsFilePath = $logsDirPath . $file . '.log')) {
+                // todo 进行日志清除
             }
             Z::forceUmask(function () use ($logsFilePath, $content) {
                 file_put_contents($logsFilePath, $content, LOCK_EX | FILE_APPEND);
-            },777);
+            });
 
         }
         if (z::isAjax()) {
