@@ -10,6 +10,7 @@ use Z;
  * @email         seekwe@gmail.com
  * @updatetime    2019-3-1 15:17:01
  */
+
 class FileWriter implements \Zls_Logger
 {
     private $logsDirPath;
@@ -17,12 +18,12 @@ class FileWriter implements \Zls_Logger
     private $saveFile;
     private $logsSubNameFormat;
 
-    public function __construct($logsDirPath, $log404 = true, $saveFile = true, $logsSubNameFormat = 'Y-m-d/H')
+    public function __construct($logsDirPath = 'errorLogs', $log404 = false, $saveFile = true, $logsSubNameFormat = 'Y-m-d/H')
     {
         $this->log404 = $log404;
         $this->saveFile = $saveFile;
         $this->logsSubNameFormat = $logsSubNameFormat;
-        $this->logsDirPath = Z::realPath($logsDirPath) . '/';
+        $this->logsDirPath = Z::realPath(Z::config()->getStorageDirPath() . $logsDirPath, true);
     }
 
     public function write(\Zls_Exception $exception)
